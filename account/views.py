@@ -42,7 +42,7 @@ def cadastro(request):
 
 def login(request):
     if request.method == "GET":
-        return render(request, '/account/login.html')
+        return render(request, 'account/login.html')
     elif request.method == "POST":
         username = request.POST.get('username')
         senha = request.POST.get('password')
