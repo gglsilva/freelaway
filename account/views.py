@@ -34,7 +34,7 @@ def cadastro(request):
             user.save()
             messages.add_message(request, constants.SUCCESS, 'Usuário criado com sucesso')
 
-            return render('/account/login')
+            return redirect('/account/login')
         except:
             messages.add_message(request, constants.ERROR, 'Erro interno do sistema')
             return redirect('/account/cadastro')
@@ -42,6 +42,8 @@ def cadastro(request):
 
 def login(request):
     if request.method == "GET":
+        if request.user.is_authenticated:
+            return redirect('/jobs/encontrar_jobs')
         return render(request, 'account/login.html')
     elif request.method == "POST":
         username = request.POST.get('username')
@@ -49,10 +51,10 @@ def login(request):
         usuario = auth.authenticate(username=username, password=senha)
         if not usuario:
             messages.error(request, 'Username ou senha inválidos')
-            return redirect('/account/login.html')
+            return redirect('/account/login')
         else:
             auth.login(request, usuario)
-        return redirect('/')
+            return redirect('/jobs/encontrar_jobs')
 
 
 def logout(request):

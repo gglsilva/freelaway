@@ -1,10 +1,16 @@
+from email import message
+from pyexpat.errors import messages
 from django.shortcuts import redirect, render
 from .models import Jobs, Referencias
 from datetime import datetime
+from django.contrib.auth.models import User
+from django.contrib import messages
+from django.contrib.messages import constants
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
-
+@login_required(login_url='/account/login')
 def encontrar_jobs(request):
     """
     if request.method == "GET":
@@ -38,10 +44,52 @@ def encontrar_jobs(request):
     return render(request, 'jobs/encontrar_jobs.html', {'jobs': jobs})
 
 
+@login_required(login_url='/account/login')
 def aceitar_job(request, id):
     job = Jobs.objects.get(id=id)
     job.profissional = request.user
     job.reservado = True
     job.save()
     return redirect('/jobs/encontrar_jobs')
-    
+
+
+@login_required(login_url='/account/login')
+def perfil(request):
+    if request.method == 'GET':
+        jobs = Jobs.objects.filter(profissional=request.user)
+        return render(request, 'jobs/perfil.html', {'jobs': jobs})
+    elif request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        primeiro_nome = request.POST.get('primeiro_nome')
+        ultimo_nome = request.POST.get('ultimo_nome')
+
+        usuario = User.objects.filter(username=username).exclude(id=request.user.id)
+
+        if usuario.exists():
+            messages.add_message(request, messages.ERROR, 'Username já existe')
+            return redirect('/jobs/perfil')
+        
+        usuario = User.objects.filter(email=email).exclude(id=request.user.id)
+
+        if usuario.exists():
+            messages.add_message(request, messages.ERROR, 'Já existe um usuario com esse E-mail')
+            return redirect('/jobs/perfil')
+
+        request.user.username = username
+        request.user.email = email
+        request.user.first_name = primeiro_nome
+        request.user.last_name = ultimo_nome
+        request.user.save()
+        messages.add_message(request, messages.SUCCESS, 'Perfil atualizado com sucesso')
+        return redirect('/jobs/perfil')
+
+@login_required(login_url='/account/login')
+def enviar_projeto(request):
+    arquivo = request.FILES.get('file')
+    id_job = request.POST.get('id')        
+    job = Jobs.objects.get(id=id_job)
+    job.arquivo_final = arquivo
+    job.status = 'AA'
+    job.save()
+    return redirect('/jobs/perfil')
